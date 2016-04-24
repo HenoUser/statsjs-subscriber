@@ -1,0 +1,31 @@
+{
+  "name": "statsjs-subscriber",
+  "version": "0.0.0",
+  "description": "Statsjs - subscriber application part",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/HenoUser/statsjs-subscriber.git"
+  },
+  "keywords": [
+    "stats",
+    "js",
+    "SPA"
+  ],
+  "author": "Paweł Jurkiewicz 'HenoUser'",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/HenoUser/statsjs-subscriber/issues"
+  },
+  "devDependencies": {
+    "grunt": "^1.0.1",
+    "grunt-contrib-concat": "^1.0.1",
+    "grunt-contrib-jshint": "^1.0.0",
+    "grunt-contrib-uglify": "^1.0.1",
+    "grunt-contrib-watch": "^1.0.0",
+    "grunt-remove-logging": "^0.2.0"
+  }
+}
