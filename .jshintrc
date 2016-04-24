@@ -1,0 +1,9 @@
+{
+  "strict" : "global",
+  "browser": true,
+  "immed" : true,
+  "devel" : true,
+  "globals": {
+    "stats": true
+  }
+}
