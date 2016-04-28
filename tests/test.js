@@ -20,7 +20,6 @@ http.createServer((req, res) => {
             res.end(data);
         });
     }
-
     controllers['/'] = index;
     controllers['/test'] = index;
     controllers['/witryna'] = index;
@@ -40,7 +39,7 @@ http.createServer((req, res) => {
      * Receive data from client statsjs logic
      */
     controllers['/_statsjs'] = function() {
-        var _body = "",
+        let _body = "",
             id = Math.round(Math.random()*1000000000);
         req.on('data', function(data) {
             _body += data;
@@ -48,14 +47,13 @@ http.createServer((req, res) => {
         req.on('end', function() {
             _body = JSON.parse(_body);
             console.warn(`Zapisz obiekt: ${id}`);
-            console.dir(_body);
+            // console.dir(_body);
             res.writeHead(200, {"Content-type" : "application/json"});
             res.end(JSON.stringify({ _id : id }));
         });
     };
-
     controllers['/_statsjs/:param'] = function(param) {
-        var _body = "";
+        let _body = "";
         req.on('data', function(data) {
             _body += data;
         });
