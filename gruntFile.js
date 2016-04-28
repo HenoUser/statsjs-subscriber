@@ -16,13 +16,13 @@ module.exports = function(grunt) {
         uglify: {
             dev: {
                 files: {
-                    'dist/statsjs-with-logs.min.js': ['dist/statsjs.js']
+                    'dist/statsjs.min.js': ['dist/statsjs.min.js']
                 }
             }
         },
         removelogging: {
             dev: {
-                src: "dist/statsjs-with-logs.min.js",
+                src: "dist/statsjs.js",
                 dest: "dist/statsjs.min.js"
             }
         },
@@ -36,7 +36,7 @@ module.exports = function(grunt) {
         watch : {
             dev : {
                 files : ["src/*.js"],
-                tasks : ['concat:dev', 'uglify:dev', 'removelogging:dev']
+                tasks : ['concat:dev', 'removelogging:dev', 'uglify:dev']
             }
         }
     });
@@ -47,6 +47,6 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks("grunt-remove-logging");
     grunt.loadNpmTasks('grunt-contrib-jshint');
 
-    grunt.registerTask('default', ['concat:dev', 'uglify:dev', 'removelogging:dev']);
+    grunt.registerTask('default', ['concat:dev', 'removelogging:dev', 'uglify:dev' ]);
 
 };
