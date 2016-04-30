@@ -5,6 +5,7 @@
  * @type {function}
  */
 var Stats = function() {
+    var that = this;
 
     /**
      * @description
@@ -12,26 +13,35 @@ var Stats = function() {
      * @param link
      * @param json
      * @param call
+     * @param connection
      */
-    this.send = function(link, json, call) {
-        var xhr = new XMLHttpRequest(),
-            _response;
-        xhr.open('POST', link, true);
-        xhr.send(JSON.stringify(json));
-        xhr.onreadystatechange = function() {
-            if (xhr.readyState === 4 && xhr.status === 200) {
-                if (typeof xhr.responseText === 'object') {
-                    call(xhr.responseText._id);
-                } else {
-                    _response = JSON.parse(xhr.responseText);
-                    call(_response._id);
+    this.send = function(link, json, call, connection) {
+        // Try to connect by WebSocket
+        if (connection) {
+            json._method = "ws";
+            connection.send(JSON.stringify(json));
+            connection.onmessage = function(e) {
+                if (call) call(JSON.parse(e.data)._id);
+            };
+        } else {
+            connection = new XMLHttpRequest();
+            connection.open('POST', link, true);
+            json._method = "xhr";
+            connection.send(JSON.stringify(json));
+            connection.onreadystatechange = function() {
+                if (connection.readyState === 4 && connection.status === 200) {
+                    if (typeof connection.responseText === 'object') {
+                        call(connection.responseText._id);
+                    }
                 }
-            }
-        };
+            };
+        }
     };
 };
 
 Stats.prototype.resource = null;
+
+Stats.prototype.connection = null;
 
 /**
  * @description
@@ -50,28 +60,43 @@ Stats.prototype.update_time_out = function() {
 Stats.prototype.ini = function(resource) {
     var that = this,
         cord = {},
-        _array = [];
+        _array = [],
+        _send = function(connection) {
+            if (!sessionStorage.getItem("statjs_id")) {
+                that.send(resource+"_statsjs", that, function(id) {
+                    sessionStorage.setItem("statjs_id", id);
+                }, connection);
+            } else {
+                that.id = sessionStorage.getItem("statjs_id");
+            }
+        };
+
     Stats.prototype.resource = resource;
-    if (!sessionStorage.getItem("statjs_id")) {
-        this.send(resource, this, function(id) {
-            sessionStorage.setItem("statjs_id", id);
-        });
+
+    /**
+     * Try to connect with WebSocket
+     */
+    if ("WebSocket" in window) {
+        this.connection = new WebSocket("ws://"+that.resource);
+        this.connection.onopen = function() {
+            _send(that.connection);
+        }
     } else {
-        this.id = sessionStorage.getItem("statjs_id");
+        _send(false);
     }
 
     /**
      * @description
      * Send time when client leave page and link
      */
-    window.addEventListener('beforeunload', function() {
-        var _id = that.id || sessionStorage.getItem("statjs_id");
-        that.send(Stats.prototype.resource+"/"+_id.replace("statjs", ""), {
-            time_out : that.update_time_out(),
-            location_leave : location.pathname,
-            history : sessionStorage.getItem("statjs_history")
-        });
-    });
+    // window.addEventListener('beforeunload', function() {
+    //     var _id = that.id || sessionStorage.getItem("statjs_id");
+    //     that.send(Stats.prototype.resource+"_statsjs/"+_id.replace("statjs", ""), {
+    //         time_out : that.update_time_out(),
+    //         location_leave : location.pathname,
+    //         history : sessionStorage.getItem("statjs_history")
+    //     });
+    // });
 
     /**
      * @description
@@ -86,12 +111,27 @@ Stats.prototype.ini = function(resource) {
             cord[location.pathname] = Date.now();
             history.push(cord);
             sessionStorage.setItem("statjs_history", JSON.stringify(history));
+            var _id = that.id || sessionStorage.getItem("statjs_id");
+            if ("WebSocket" in window) {
+                console.log(that.connection);
+                if (that.connection) {
+                    that.send(null, {
+                        _id : _id,
+                        history : sessionStorage.getItem("statjs_history")
+                    }, null, that.connection);
+                }
+            } else {
+                that.send(Stats.prototype.resource+"_statsjs/"+_id, {
+                    _id : _id,
+                    history : sessionStorage.getItem("statjs_history")
+                }, null);
+            }
         } else {
             cord[location.pathname] = Date.now();
             _array[0] = cord;
             sessionStorage.setItem("statjs_history", JSON.stringify(_array));
         }
-    }, 1000);
+    }, 500);
 };
 
 
