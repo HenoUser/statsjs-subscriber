@@ -60,9 +60,3 @@ stats.referrer = (function() {
         return "not supported";
     }
 }());
-
-/**
- * @description
- * Default 'location_leave'
- */
-stats.location_leave = "not recognition";
