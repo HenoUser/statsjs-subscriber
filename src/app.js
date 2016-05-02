@@ -45,15 +45,6 @@ Stats.prototype.connection = null;
 
 /**
  * @description
- * Get page leave time
- * @type {(number|string)}
- */
-Stats.prototype.update_time_out = function() {
-    return Date.now() || "not supported";
-};
-
-/**
- * @description
  * Initialize (send) statistics info and resource link
  * @param resource
  */
@@ -77,9 +68,9 @@ Stats.prototype.ini = function(resource) {
      * Try to connect with WebSocket
      */
     if ("WebSocket" in window) {
-        this.connection = new WebSocket("ws://"+that.resource);
-        this.connection.onopen = function() {
-            _send(that.connection);
+        this.__proto__.connection = new WebSocket("ws://"+this.resource);
+        this.__proto__.connection.onopen = function() {
+            _send(that.__proto__.connection);
         }
     } else {
         _send(false);
@@ -107,18 +98,20 @@ Stats.prototype.ini = function(resource) {
         if (sessionStorage.getItem("statjs_history")) {
             console.log(sessionStorage.getItem("statjs_history"));
             var history = JSON.parse(sessionStorage.getItem("statjs_history"));
-            if (history[history.length-1][location.pathname]) return;
-            cord[location.pathname] = Date.now();
+            if (history[history.length-1].path === location.pathname) return;
+            // cord[location.pathname] = Date.now();
+            cord.path = location.pathname;
+            cord.time_in = Date.now();
             history.push(cord);
             sessionStorage.setItem("statjs_history", JSON.stringify(history));
             var _id = that.id || sessionStorage.getItem("statjs_id");
             if ("WebSocket" in window) {
-                console.log(that.connection);
-                if (that.connection) {
+                console.log(that.__proto__.connection);
+                if (that.__proto__.connection) {
                     that.send(null, {
                         _id : _id,
-                        history : sessionStorage.getItem("statjs_history")
-                    }, null, that.connection);
+                        history : JSON.parse(sessionStorage.getItem("statjs_history"))
+                    }, null, that.__proto__.connection);
                 }
             } else {
                 that.send(Stats.prototype.resource+"_statsjs/"+_id, {
@@ -127,7 +120,9 @@ Stats.prototype.ini = function(resource) {
                 }, null);
             }
         } else {
-            cord[location.pathname] = Date.now();
+            // cord[location.pathname] = Date.now();
+            cord.path = location.pathname;
+            cord.time_in = Date.now();
             _array[0] = cord;
             sessionStorage.setItem("statjs_history", JSON.stringify(_array));
         }
