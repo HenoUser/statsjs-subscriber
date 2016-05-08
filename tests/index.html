@@ -16,7 +16,12 @@
         Initialization
     -->
     <script>
-        stats.ini("localhost:3000");
+        /**
+         * @description
+         * First param - host without protocol
+         * Second param - [boolean] if statistic gui server support https (default false)
+         */
+        stats.ini("localhost:3000", false);
     </script>
 
     <!--

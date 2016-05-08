@@ -7,6 +7,8 @@
 var Stats = function() {
     var that = this;
 
+    this._ws = ("WebSocket" in window);
+
     /**
      * @description
      * Sending json to 'link' resources on server
@@ -18,7 +20,6 @@ var Stats = function() {
     this.send = function(link, json, call, connection) {
         // Try to connect by WebSocket
         if (connection) {
-            json._method = "ws";
             connection.send(JSON.stringify(json));
             connection.onmessage = function(e) {
                 if (call) call(JSON.parse(e.data)._id);
@@ -26,13 +27,12 @@ var Stats = function() {
         } else {
             connection = new XMLHttpRequest();
             connection.open('POST', link, true);
-            json._method = "xhr";
+            connection.setRequestHeader("Content-Type", "application/json");
+            connection.setRequestHeader("X-API-Key", "dK3o0_d4%_d7G");
             connection.send(JSON.stringify(json));
             connection.onreadystatechange = function() {
-                if (connection.readyState === 4 && connection.status === 200) {
-                    if (typeof connection.responseText === 'object') {
-                        call(connection.responseText._id);
-                    }
+                if (connection.readyState === 4 && connection.status === 200 && !!call) {
+                    call(JSON.parse(connection.responseText)._id);
                 }
             };
         }
@@ -47,14 +47,16 @@ Stats.prototype.connection = null;
  * @description
  * Initialize (send) statistics info and resource link
  * @param resource
+ * @param ssl
  */
-Stats.prototype.ini = function(resource) {
+Stats.prototype.ini = function(resource, ssl) {
     var that = this,
         cord = {},
         _array = [],
+        _ssl = (ssl) ? "https" : "http",
         _send = function(connection) {
             if (!sessionStorage.getItem("statjs_id")) {
-                that.send(resource+"_statsjs", that, function(id) {
+                that.send(resource+"/_statsjs", that, function(id) {
                     sessionStorage.setItem("statjs_id", id);
                 }, connection);
             } else {
@@ -67,12 +69,13 @@ Stats.prototype.ini = function(resource) {
     /**
      * Try to connect with WebSocket
      */
-    if ("WebSocket" in window) {
+    if (this._ws) {
         this.__proto__.connection = new WebSocket("ws://"+this.resource);
         this.__proto__.connection.onopen = function() {
             _send(that.__proto__.connection);
         }
     } else {
+        this.__proto__.resource = _ssl+"://"+this.__proto__.resource;
         _send(false);
     }
 
@@ -105,7 +108,7 @@ Stats.prototype.ini = function(resource) {
             history.push(cord);
             sessionStorage.setItem("statjs_history", JSON.stringify(history));
             var _id = that.id || sessionStorage.getItem("statjs_id");
-            if ("WebSocket" in window) {
+            if (that._ws) {
                 console.log(that.__proto__.connection);
                 if (that.__proto__.connection) {
                     that.send(null, {
@@ -114,7 +117,7 @@ Stats.prototype.ini = function(resource) {
                     }, null, that.__proto__.connection);
                 }
             } else {
-                that.send(Stats.prototype.resource+"_statsjs/"+_id, {
+                that.send(Stats.prototype.resource+"/_statsjs/"+_id, {
                     _id : _id,
                     history : sessionStorage.getItem("statjs_history")
                 }, null);
@@ -126,6 +129,7 @@ Stats.prototype.ini = function(resource) {
             _array[0] = cord;
             sessionStorage.setItem("statjs_history", JSON.stringify(_array));
         }
+    // TODO(jurek) Define interval time as value and add to statsjs object
     }, 500);
 };
 
