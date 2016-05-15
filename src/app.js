@@ -41,6 +41,12 @@ var Stats = function() {
 
 Stats.prototype.resource = null;
 
+/**
+ * Feature implementation for web workers
+ * @type {{}}
+ */
+Stats.prototype.worker = {};
+
 Stats.prototype.connection = null;
 
 /**
@@ -56,8 +62,9 @@ Stats.prototype.ini = function(resource, ssl) {
         _ssl = (ssl) ? "https" : "http",
         _send = function(connection) {
             if (!sessionStorage.getItem("statjs_id")) {
-                that.send(resource+"/_statsjs", that, function(id) {
+                that.send(that.resource, that, function(id) {
                     sessionStorage.setItem("statjs_id", id);
+                    that.id = id;
                 }, connection);
             } else {
                 that.id = sessionStorage.getItem("statjs_id");
@@ -75,7 +82,7 @@ Stats.prototype.ini = function(resource, ssl) {
             _send(that.__proto__.connection);
         }
     } else {
-        this.__proto__.resource = _ssl+"://"+this.__proto__.resource;
+        this.__proto__.resource = _ssl+"://"+this.__proto__.resource+"/_statsjs";
         _send(false);
     }
 
@@ -83,14 +90,13 @@ Stats.prototype.ini = function(resource, ssl) {
      * @description
      * Send time when client leave page and link
      */
-    // window.addEventListener('beforeunload', function() {
-    //     var _id = that.id || sessionStorage.getItem("statjs_id");
-    //     that.send(Stats.prototype.resource+"_statsjs/"+_id.replace("statjs", ""), {
-    //         time_out : that.update_time_out(),
-    //         location_leave : location.pathname,
-    //         history : sessionStorage.getItem("statjs_history")
-    //     });
-    // });
+    if (!this._ws) {
+        window.addEventListener('beforeunload', function() {
+            that.send(Stats.prototype.resource+"/"+that.id, {
+                time_out : Date.now()
+            }, null);
+        });
+    }
 
     /**
      * @description
@@ -107,19 +113,16 @@ Stats.prototype.ini = function(resource, ssl) {
             cord.time_in = Date.now();
             history.push(cord);
             sessionStorage.setItem("statjs_history", JSON.stringify(history));
-            var _id = that.id || sessionStorage.getItem("statjs_id");
             if (that._ws) {
                 console.log(that.__proto__.connection);
                 if (that.__proto__.connection) {
                     that.send(null, {
-                        _id : _id,
                         history : JSON.parse(sessionStorage.getItem("statjs_history"))
                     }, null, that.__proto__.connection);
                 }
             } else {
-                that.send(Stats.prototype.resource+"/_statsjs/"+_id, {
-                    _id : _id,
-                    history : sessionStorage.getItem("statjs_history")
+                that.send(Stats.prototype.resource+"/"+that.id, {
+                    history : JSON.parse(sessionStorage.getItem("statjs_history"))
                 }, null);
             }
         } else {
